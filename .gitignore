@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+
+*.js
+*.html
+*.css
+**/CGL
+**/GAMES101_Homework_S2021
+/build
