@@ -44,14 +44,24 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
     Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
 
     float half_fov = eye_fov / 2.0;
-    float half_height = zNear * std::tan(half_fov * ANGLE_TO_RADIAN);
-    float width = 2 * half_height * aspect_ratio;
+    float top = zNear * std::tan(half_fov * ANGLE_TO_RADIAN);
+    float right = top * aspect_ratio;
+    float bottom = -top;
+    float left = -right;
 
-    // TODO: Implement this function
-    // Create the projection matrix for the given parameters.
-    // Then return it.
+    Eigen::Matrix4f perspective_projection = Eigen::Matrix4f::Identity();
+    perspective_projection << zNear, 0, 0, 0,
+                              0, zNear, 0, 0,
+                              0, 0,zNear + zFar, -zNear * zFar,
+                              0,0,1,0;
 
-    return projection;
+    Eigen::Matrix4f orthographic_projection = Eigen::Matrix4f::Identity();
+    orthographic_projection <<  2 / (right - left), 0, 0, - (left + right) / 2,
+                                0, 2 / (top - bottom), 0, - (top + bottom) / 2,
+                                0, 0, 2 / (zFar - zNear), - (zNear + zFar) / 2,
+                                0, 0, 0, 1;
+
+    return orthographic_projection * perspective_projection * projection;
 }
 
 int main(int argc, const char** argv)
