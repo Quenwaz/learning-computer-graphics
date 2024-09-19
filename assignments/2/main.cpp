@@ -48,7 +48,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
                         0, 0, zNear + zFar, -zNear * zFar,
                         0, 0, 1, 0;
 
-    Eigen::Matrix4f reverseZ= Eigen::Matrix4f::Identity();;
+    Eigen::Matrix4f reverseZ= Eigen::Matrix4f::Identity();
     reverseZ(2,2) = -1;
 
     return orthoProjection * perspective2Ortho * reverseZ;
