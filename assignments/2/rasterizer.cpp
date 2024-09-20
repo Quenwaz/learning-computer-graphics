@@ -40,9 +40,23 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
 }
 
 
-static bool insideTriangle(int x, int y, const Vector3f* _v)
+static bool insideTriangle(float x, float y, const Vector3f* _v)
 {   
     // TODO : Implement this function to check if the point (x, y) is inside the triangle represented by _v[0], _v[1], _v[2]
+    // Vector3f
+    // float x = _x; float y = _y;
+    Vector3f v1(_v[1].x() - _v[0].x(), _v[1].y() - _v[0].y(), _v[1].z() - _v[0].z());
+    Vector3f p1(x - _v[0].x(), y - _v[0].y(), 0 - _v[0].z());
+
+    Vector3f v2(_v[2].x() - _v[1].x(), _v[2].y() - _v[1].y(), _v[2].z() - _v[1].z());
+    Vector3f p2(x - _v[1].x(), y - _v[1].y(), 0 - _v[1].z());
+
+    Vector3f v3(_v[0].x() - _v[2].x(), _v[0].y() - _v[2].y(), _v[0].z() - _v[2].z());
+    Vector3f p3(x - _v[2].x(), y - _v[2].y(), 0 - _v[2].z());
+
+    auto z1 = v1.cross(p1)[2], z2 = v2.cross(p2)[2], z3 = v3.cross(p3)[2];
+    return (z1 > 0 && z2 > 0 && z3 > 0) ||
+           (z1 < 0 && z2 < 0 && z3 < 0);
 }
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector3f* v)
@@ -105,6 +119,61 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf
 //Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     auto v = t.toVector4();
+    const auto minx = std::min(std::min(v[0].x(), v[1].x()), v[2].x());
+    const auto miny = std::min(std::min(v[0].y(), v[1].y()), v[2].y());
+    const auto maxx = std::max(std::max(v[0].x(), v[1].x()), v[2].x());
+    const auto maxy =std::max(std::max(v[0].y(), v[1].y()), v[2].y());
+// #define VERSION1
+#ifndef VERSION1
+    const ushort sample_times = 2;
+    const float sample_rate = 1.0 / sample_times;
+    static std::vector<float> sample_depth_buf;
+    sample_depth_buf.resize(width * height * sample_times * sample_times);
+#endif
+
+    const auto get_z_interpolated = [v,t](const float& x, const float& y){
+        const auto [alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
+        const float w_reciprocal = 1.0/(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
+        float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
+        z_interpolated *= w_reciprocal;
+        return z_interpolated;
+    };
+
+    for (size_t x = minx; x < maxx; x++)
+    {
+        for (size_t y = miny; y < maxy; y++)
+        {
+#ifdef VERSION1
+            if (insideTriangle(x + 0.5, y + 0.5, t.v)){
+                const auto z_interpolated = get_z_interpolated(x,y);
+                const auto depth_index = get_index(x,y);
+                if (z_interpolated < depth_buf[depth_index]){
+                    set_pixel(Vector3f(x, y,0),t.getColor());
+                    depth_buf[depth_index] = z_interpolated;
+                }
+            }
+#else
+            for (size_t i = 0; i < sample_times; i++)
+            {
+                for (size_t j = 0; j < sample_times; j++)
+                {
+                    float xx = x + i * sample_rate + sample_rate * .5;
+                    float yy = y + j * sample_rate + sample_rate * .5;
+                    if (insideTriangle(xx, yy, t.v))
+                    {
+                        const auto z_interpolated = get_z_interpolated(xx,yy);
+                        const auto depth_index = (height * sample_times -1-y)*width * sample_times + x;
+                        if (z_interpolated < sample_depth_buf[depth_index]){
+                            set_pixel(Vector3f(x, y,0),t.getColor());
+                            sample_depth_buf[depth_index] = z_interpolated;
+                        }
+                    }
+                }
+            }
+#endif
+        }
+    }
+
     
     // TODO : Find out the bounding box of current triangle.
     // iterate through the pixel and find if the current pixel is inside the triangle
@@ -159,9 +228,8 @@ int rst::rasterizer::get_index(int x, int y)
 void rst::rasterizer::set_pixel(const Eigen::Vector3f& point, const Eigen::Vector3f& color)
 {
     //old index: auto ind = point.y() + point.x() * width;
-    auto ind = (height-1-point.y())*width + point.x();
+    const auto ind = (height-1-point.y())*width + point.x();
     frame_buf[ind] = color;
-
 }
 
 // clang-format on

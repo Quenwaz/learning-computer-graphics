@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(computer-graphics)
 
-list(APPEND CMAKE_PREFIX_PATH  "$ENV{CppDevEnvs}/opencv/3.4.16/install")
+list(APPEND CMAKE_PREFIX_PATH  "$ENV{CppDevEnvs}/opencv_3.4.16")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake_modules)
 include(utils)
 include_directories("$ENV{CppDevEnvs}/PCL_1.13.1/3rdParty/Eigen")
