@@ -123,7 +123,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     const auto miny = std::min(std::min(v[0].y(), v[1].y()), v[2].y());
     const auto maxx = std::max(std::max(v[0].x(), v[1].x()), v[2].x());
     const auto maxy =std::max(std::max(v[0].y(), v[1].y()), v[2].y());
-// #define VERSION1
+#define VERSION1
 #ifndef VERSION1
     const ushort sample_times = 2;
     const float sample_rate = 1.0 / sample_times;
@@ -153,6 +153,8 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                 }
             }
 #else
+            float bias = 0;
+            bool need_to_set = false;
             for (size_t i = 0; i < sample_times; i++)
             {
                 for (size_t j = 0; j < sample_times; j++)
@@ -161,15 +163,18 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                     float yy = y + j * sample_rate + sample_rate * .5;
                     if (insideTriangle(xx, yy, t.v))
                     {
+                        bias += 1;
                         const auto z_interpolated = get_z_interpolated(xx,yy);
                         const auto depth_index = (height * sample_times -1-y)*width * sample_times + x;
                         if (z_interpolated < sample_depth_buf[depth_index]){
-                            set_pixel(Vector3f(x, y,0),t.getColor());
+                            need_to_set = true;
                             sample_depth_buf[depth_index] = z_interpolated;
                         }
                     }
                 }
             }
+            if (bias > 0 && need_to_set)
+                set_pixel(Vector3f(x, y,0),(bias /  (sample_times * sample_times)) * t.getColor());
 #endif
         }
     }
