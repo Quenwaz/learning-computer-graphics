@@ -7,7 +7,7 @@
 |---|---|---|
 |1|2024-09-14|:white_check_mark:|
 |2|2024-09-23|:white_check_mark:|
-|3|2024-xx-xx|:negative_squared_cross_mark:|
+|3|2024-xx-xx|:green_square:|
 
 
 ## Summarize
