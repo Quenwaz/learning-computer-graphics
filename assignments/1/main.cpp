@@ -55,11 +55,20 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                               0, 0,zNear + zFar, -zNear * zFar,
                               0,0,1,0;
 
-    Eigen::Matrix4f orthographic_projection = Eigen::Matrix4f::Identity();
-    orthographic_projection <<  2 / (right - left), 0, 0, - (left + right) / 2,
-                                0, 2 / (top - bottom), 0, - (top + bottom) / 2,
-                                0, 0, 2 / (zFar - zNear), - (zNear + zFar) / 2,
-                                0, 0, 0, 1;
+    Eigen::Matrix4f ortho_scale= Eigen::Matrix4f::Identity();
+    ortho_scale <<  2.0 /(right - left), 0, 0,0,
+                        0, 2.0 / (top - bottom), 0, 0,
+                        0, 0, 2.0 / (zFar - zNear), 0,
+                        0, 0, 0, 1.0;
+
+    Eigen::Matrix4f ortho_translate= Eigen::Matrix4f::Identity();
+    ortho_translate <<  1.0, 0, 0, -(right + left) * 0.5,
+                        0, 1.0, 0, -(top + bottom) * 0.5,
+                        0, 0, 1.0, -(zFar + zNear) * 0.5,
+                        0, 0, 0, 1.0;
+
+
+    Eigen::Matrix4f orthographic_projection= ortho_scale * ortho_translate;
 
     return orthographic_projection * perspective_projection * projection;
 }

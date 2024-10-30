@@ -36,11 +36,20 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
     const double right = aspect_ratio * top;
     const double left= -right;
 
-    Eigen::Matrix4f orthoProjection= Eigen::Matrix4f::Identity();
-    orthoProjection <<  2.0 /(right - left), 0, 0, -(right + left) * 0.5,
-                        0, 2.0 / (top - bottom), 0, -(top + bottom) * 0.5,
-                        0, 0, 2.0 / (zFar - zNear), -(zFar + zNear) * 0.5,
+    Eigen::Matrix4f ortho_scale= Eigen::Matrix4f::Identity();
+    ortho_scale <<  2.0 /(right - left), 0, 0,0,
+                        0, 2.0 / (top - bottom), 0, 0,
+                        0, 0, 2.0 / (zFar - zNear), 0,
                         0, 0, 0, 1.0;
+
+    Eigen::Matrix4f ortho_translate= Eigen::Matrix4f::Identity();
+    ortho_translate <<  1.0, 0, 0, -(right + left) * 0.5,
+                        0, 1.0, 0, -(top + bottom) * 0.5,
+                        0, 0, 1.0, -(zFar + zNear) * 0.5,
+                        0, 0, 0, 1.0;
+
+
+    Eigen::Matrix4f orthoProjection= ortho_scale * ortho_translate;
 
     Eigen::Matrix4f perspective2Ortho= Eigen::Matrix4f::Identity();
     perspective2Ortho << zNear, 0, 0, 0,
@@ -60,11 +69,11 @@ int main(int argc, const char** argv)
     bool command_line = false;
     std::string filename = "output.png";
 
-    if (argc == 2)
-    {
-        command_line = true;
-        filename = std::string(argv[1]);
-    }
+    // if (argc == 2)
+    // {
+    //     command_line = true;
+    //     filename = std::string(argv[1]);
+    // }
 
     rst::rasterizer r(700, 700);
 
